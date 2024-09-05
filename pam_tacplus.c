@@ -220,7 +220,8 @@ int _pam_account(pam_handle_t *pamh, int argc, const char **argv, int type,
 	status = PAM_SESSION_ERR;
 	for (srv_i = 0; srv_i < tac_srv_no; srv_i++)
 	{
-		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
+		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key, 
+									(*tac_vrf) ? tac_vrf : NULL,
 									NULL, tac_timeout);
 		if (tac_fd < 0)
 		{
@@ -329,6 +330,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 			syslog(LOG_DEBUG, "%s: trying srv %lu", __FUNCTION__, srv_i);
 
 		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
+									(*tac_vrf) ? tac_vrf : NULL,
 									NULL, tac_timeout);
         if (tac_fd < 0) {
             _pam_log(LOG_ERR, "connection failed srv %lu: %m", srv_i);
@@ -668,8 +670,9 @@ int pam_sm_acct_mgmt(pam_handle_t *pamh, int UNUSED(flags), int argc,
 	if (tac_protocol[0] != '\0')
         tac_add_attrib(attr, "protocol", tac_protocol);
 
-	tac_fd = tac_connect_single(active_server.addr, active_server.key, NULL,
-								tac_timeout);
+	tac_fd = tac_connect_single(active_server.addr, active_server.key,
+								(*tac_vrf) ? tac_vrf : NULL,
+								NULL, tac_timeout);
 	if (tac_fd < 0)
 	{
         _pam_log(LOG_ERR, "TACACS+ server unavailable");
@@ -854,6 +857,7 @@ int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc,
 			syslog(LOG_DEBUG, "%s: trying srv %lu", __FUNCTION__, srv_i);
 
 		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
+									(*tac_vrf) ? tac_vrf : NULL,
 									NULL, tac_timeout);
 		if (tac_fd < 0)
 		{

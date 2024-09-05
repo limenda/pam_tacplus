@@ -59,7 +59,7 @@ void tac_enable_readtimeout(int enable)
  *   >= 0 : valid fd
  *   <  0 : error status code, see LIBTAC_STATUS_...
  */
-int tac_connect(struct addrinfo **server, char **key, int servers)
+int tac_connect(struct addrinfo **server, char **key, const char* iface, int servers)
 {
     int tries;
     int fd = -1;
@@ -72,7 +72,7 @@ int tac_connect(struct addrinfo **server, char **key, int servers)
     {
         for (tries = 0; tries < servers; tries++)
         {
-            if ((fd = tac_connect_single(server[tries], key[tries], NULL, tac_timeout)) >= 0)
+            if ((fd = tac_connect_single(server[tries], key[tries], iface, NULL, tac_timeout)) >= 0)
             {
                 /* tac_secret was set in tac_connect_single on success */
                 break;
@@ -89,7 +89,7 @@ int tac_connect(struct addrinfo **server, char **key, int servers)
  *   >= 0 : valid fd
  *   <  0 : error status code, see LIBTAC_STATUS_...
  */
-int tac_connect_single(const struct addrinfo *server, const char *key, struct addrinfo *srcaddr, int timeout)
+int tac_connect_single(const struct addrinfo *server, const char *key, const char* iface, struct addrinfo *srcaddr, int timeout)
 {
     int retval = LIBTAC_STATUS_CONN_ERR; /* default retval */
     int fd = -1;
@@ -111,6 +111,13 @@ int tac_connect_single(const struct addrinfo *server, const char *key, struct ad
     if ((fd = socket(server->ai_family, server->ai_socktype, server->ai_protocol)) < 0)
     {
         TACSYSLOG(LOG_ERR, "%s: socket creation error: %s", __FUNCTION__,
+                  strerror(errno));
+        goto bomb;
+    }
+
+    if (iface && setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface, strlen(iface)+1) < 0)
+    {
+        TACSYSLOG(LOG_ERR, "%s: setsockopt(SO_BINDTODEVICE) error: %s", __FUNCTION__,
                   strerror(errno));
         goto bomb;
     }

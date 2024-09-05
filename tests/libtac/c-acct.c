@@ -16,6 +16,7 @@ int main() {
     int ret;
     struct areply arep;
     char *server_name;
+    char *vrf = NULL;
     char user[] = "testuser1";
     char tty[] = "ttyS0";
     char remote_addr[] = "1.1.1.1";
@@ -28,6 +29,8 @@ int main() {
     server_name = getenv("TACPLUS_SERVER");
     if (server_name == NULL)
         server_name = "localhost";
+    
+    vrf = getenv("TACPLUS_VRF");
 
     plan_lazy();
 
@@ -46,7 +49,7 @@ int main() {
     tac_add_attrib(send_attr, "start_time", "2021-10-31T20:10:21+00:00");
     tac_add_attrib(send_attr, "task_id", "1234567890");
 
-    tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
     is_bool(tac_fd > 0, true, "tac_connect_single");
     if (tac_fd <= 0) {
         sysbail("tac_connect_single\n");

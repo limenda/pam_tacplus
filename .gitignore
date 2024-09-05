@@ -12,6 +12,7 @@ config/missing
 config/ar-lib
 configure
 config/*.m4
+.codechecker/
 .deps/
 .libs/
 Makefile
@@ -44,6 +45,13 @@ lib/*.h
 lib/*.c
 lib/Makefile.gnulib
 lib/sys/
+tests/runtests
+tests/tap/libtap.a
+tests/libtac/c-acct
+tests/libtac/c-author
+tests/libtac/c-chap
+tests/libtac/c-login
+tests/libtac/c-pap
 *.tar.gz
 *.crt
 *.sig

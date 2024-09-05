@@ -16,6 +16,7 @@ int main() {
     int ret;
     struct areply arep;
     char *server_name;
+    char *vrf = NULL;
     char user[] = "testuser1";
     char tty[] = "ttyS0";
     char remote_addr[] = "1.1.1.1";
@@ -29,6 +30,8 @@ int main() {
     if (server_name == NULL)
         server_name = "localhost";
 
+    vrf = getenv("TACPLUS_VRF");
+
     plan_lazy();
 
     memset(&hints, 0, sizeof hints);
@@ -39,7 +42,7 @@ int main() {
     if (ret != 0) {
         sysbail("getaddrinfo");
     }
-    tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
     is_bool(tac_fd > 0, true, "tac_connect_single");
     if (tac_fd <= 0) {
         sysbail("tac_connect_single\n");
@@ -67,7 +70,7 @@ int main() {
     tac_add_attrib(send_attr, "service", "blah");
     tac_add_attrib(send_attr, "protocol", "bleh");
 
-    tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
     is_bool(tac_fd > 0, true, "tac_connect_single");
     if (tac_fd <= 0) {
         sysbail("tac_connect_single\n");
@@ -85,7 +88,7 @@ int main() {
     arep.attr = gl_list_create_empty(GL_ARRAY_LIST, NULL, NULL, NULL, false);
     tac_secret = "badkey";
 
-    tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
     is_bool(tac_fd > 0, true, "tac_connect_single");
     if (tac_fd <= 0) {
         sysbail("tac_connect_single\n");

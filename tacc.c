@@ -62,7 +62,7 @@ void showversion(char *progname);
 
 void authenticate(const struct addrinfo *tac_server, const char *tac_secret,
                   const char *user, const char *pass, const char *tty,
-                  const char *remote_addr);
+                  const char *vrf, const char *remote_addr);
 
 void timeout_handler(int signum);
 
@@ -108,6 +108,7 @@ static struct option long_options[] =
         {"login", required_argument,
          NULL, 'L'},
         {"tty", required_argument, NULL, 'y'},
+        {"vrf", required_argument, NULL, 'v'},
 
         /* modifiers */
         {"quiet", no_argument, NULL, 'q'},
@@ -118,7 +119,7 @@ static struct option long_options[] =
         {0, 0, 0, 0}};
 
 /* command line letters */
-char *opt_string = "TRAVhu:p:s:k:c:qr:wnS:P:L:y:";
+char *opt_string = "TRAVhu:p:s:k:c:qr:wnS:P:L:y:v:";
 
 void dump_attributes(gl_list_t attr)
 {
@@ -138,6 +139,7 @@ int main(int argc, char **argv)
     char *remote_addr = NULL;
     char *service = NULL;
     char *protocol = NULL;
+    char* vrf = NULL;
     struct addrinfo *tac_server;
     char *tac_server_name = NULL;
     int tac_fd;
@@ -246,6 +248,9 @@ int main(int argc, char **argv)
             case 'y':
                 tty = optarg;
                 break;
+            case 'v':
+                vrf = optarg;
+                break;
             default:
                 printf("Invalid option: %s", optarg);
                 break;
@@ -329,7 +334,7 @@ int main(int argc, char **argv)
     openlog("tacc", LOG_CONS | LOG_PID, LOG_AUTHPRIV);
 
     if (do_authen)
-        authenticate(tac_server, tac_secret, g_user, pass, tty, remote_addr);
+        authenticate(tac_server, tac_secret, g_user, pass, tty, vrf, remote_addr);
 
     if (do_author) {
         struct areply arep;
@@ -343,7 +348,7 @@ int main(int argc, char **argv)
         tac_add_attrib(send_attr, "service", service);
         tac_add_attrib(send_attr, "protocol", protocol);
 
-        tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
         if (tac_fd < 0) {
             if (!quiet)
                 printf("Error connecting to TACACS+ server: %m\n");
@@ -407,7 +412,7 @@ int main(int argc, char **argv)
         tac_add_attrib(send_attr, "service", service);
         tac_add_attrib(send_attr, "protocol", protocol);
 
-        tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
         if (tac_fd < 0) {
             if (!quiet)
                 printf("Error connecting to TACACS+ server: %m\n");
@@ -532,7 +537,7 @@ int main(int argc, char **argv)
         sprintf(buf, "%d", task_id);
         tac_add_attrib(send_attr, "task_id", buf);
 
-        tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
         if (tac_fd < 0) {
             if (!quiet)
                 printf("Error connecting to TACACS+ server: %m\n");
@@ -584,7 +589,7 @@ void sighandler(int sig __Unused)
 }
 
 void authenticate(const struct addrinfo *tac_server, const char *tac_secret,
-                  const char *user, const char *pass, const char *tty,
+                  const char *user, const char *pass, const char *tty, const char *vrf,
                   const char *remote_addr)
 {
     int tac_fd;
@@ -593,7 +598,7 @@ void authenticate(const struct addrinfo *tac_server, const char *tac_secret,
 
     memset(&arep, 0, sizeof(arep));
 
-    tac_fd = tac_connect_single(tac_server, tac_secret, NULL, 60);
+    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
     if (tac_fd < 0) {
         if (!quiet)
             printf("Error connecting to TACACS+ server: %m\n");

@@ -40,6 +40,7 @@ unsigned int tac_srv_no = 0;
 char tac_service[64];
 char tac_protocol[64];
 char tac_prompt[64];
+char tac_vrf[16];
 struct addrinfo tac_srv_addr[TAC_PLUS_MAXSERVERS];
 struct sockaddr tac_sock_addr[TAC_PLUS_MAXSERVERS];
 
@@ -297,6 +298,7 @@ int _pam_parse(int argc, const char **argv)
     tac_protocol[0] = 0;
     tac_prompt[0] = 0;
     tac_login[0] = 0;
+    tac_vrf[0] = 0;
 
     for (ctrl = 0; argc-- > 0; ++argv)
     {
@@ -325,6 +327,8 @@ int _pam_parse(int argc, const char **argv)
             }
         } else if (!strncmp(*argv, "login=", strlen("login="))) {
             xstrncpy(tac_login, *argv + strlen("login="), sizeof(tac_login) - 1);
+        } else if (!strncmp(*argv, "vrf=", strlen("vrf="))) {
+            xstrncpy(tac_vrf, *argv + strlen("vrf="), sizeof(tac_vrf) - 1);
         } else if (!strcmp(*argv, "acct_all")) {
             ctrl |= PAM_TAC_ACCT;
         } else if (!strncmp(*argv, "server=", strlen("server="))) { /* authen & acct */
@@ -451,6 +455,7 @@ int _pam_parse(int argc, const char **argv)
         _pam_log(LOG_DEBUG, "tac_protocol='%s'", tac_protocol);
         _pam_log(LOG_DEBUG, "tac_prompt='%s'", tac_prompt);
         _pam_log(LOG_DEBUG, "tac_login='%s'", tac_login);
+        _pam_log(LOG_DEBUG, "tac_vrf='%s'", tac_vrf);
     }
 
     return ctrl;

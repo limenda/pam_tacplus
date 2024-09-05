@@ -219,9 +219,9 @@ extern void tac_set_dscp(uint8_t val);
 
 extern void tac_enable_readtimeout(int enable);
 
-extern int tac_connect(struct addrinfo **, char **, int);
+extern int tac_connect(struct addrinfo **, char **, const char*, int);
 
-extern int tac_connect_single(const struct addrinfo *, const char *, struct addrinfo *,
+extern int tac_connect_single(const struct addrinfo *, const char *, const char *, struct addrinfo *,
                               int);
 
 extern char *tac_ntop(const struct sockaddr *);
