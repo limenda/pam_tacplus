@@ -89,7 +89,7 @@ int tac_connect(struct addrinfo **server, char **key, const char* iface, int ser
  *   >= 0 : valid fd
  *   <  0 : error status code, see LIBTAC_STATUS_...
  */
-int tac_connect_single(const struct addrinfo *server, const char *key, const char* iface, struct addrinfo *srcaddr, int timeout)
+int tac_connect_single(const struct addrinfo *server, const char *key, const char* iface, struct sockaddr_in *srcaddr, int timeout)
 {
     int retval = LIBTAC_STATUS_CONN_ERR; /* default retval */
     int fd = -1;
@@ -155,10 +155,10 @@ int tac_connect_single(const struct addrinfo *server, const char *key, const cha
     /* bind if source address got explicity defined */
     if (srcaddr)
     {
-        if (bind(fd, srcaddr->ai_addr, srcaddr->ai_addrlen) < 0)
+        if (bind(fd, (struct sockaddr *)srcaddr, sizeof(*srcaddr)) < 0)
         {
-            TACSYSLOG(LOG_ERR, "%s: Failed to bind source address: %s",
-                      __FUNCTION__, strerror(errno));
+            TACSYSLOG(LOG_ERR, "%s: Failed to bind source address %s: %s",
+                      __FUNCTION__, tac_ntop((struct sockaddr *)srcaddr), strerror(errno));
             goto bomb;
         }
     }
