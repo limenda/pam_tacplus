@@ -40,6 +40,7 @@ extern char tac_service[64];
 extern char tac_protocol[64];
 extern char tac_prompt[64];
 extern char tac_vrf[16];
+extern struct sockaddr_in src_addr;
 
 void tac_copy_addr_info(struct addrinfo *p_dst, const struct addrinfo *p_src);
 

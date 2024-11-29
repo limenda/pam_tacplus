@@ -41,6 +41,7 @@ char tac_service[64];
 char tac_protocol[64];
 char tac_prompt[64];
 char tac_vrf[16];
+struct sockaddr_in src_addr;
 struct addrinfo tac_srv_addr[TAC_PLUS_MAXSERVERS];
 struct sockaddr tac_sock_addr[TAC_PLUS_MAXSERVERS];
 
@@ -292,6 +293,7 @@ int _pam_parse(int argc, const char **argv)
     memset(&tac_srv_addr, 0, sizeof(struct addrinfo) * TAC_PLUS_MAXSERVERS);
     memset(&tac_sock_addr, 0, sizeof(struct sockaddr) * TAC_PLUS_MAXSERVERS);
     memset(&tac_sock6_addr, 0, sizeof(struct sockaddr_in6) * TAC_PLUS_MAXSERVERS);
+    memset(&src_addr, 0, sizeof(struct sockaddr_in));
     tac_srv_no = 0;
 
     tac_service[0] = 0;
@@ -329,6 +331,22 @@ int _pam_parse(int argc, const char **argv)
             xstrncpy(tac_login, *argv + strlen("login="), sizeof(tac_login) - 1);
         } else if (!strncmp(*argv, "vrf=", strlen("vrf="))) {
             xstrncpy(tac_vrf, *argv + strlen("vrf="), sizeof(tac_vrf) - 1);
+        } else if (!strncmp(*argv, "src_ip=", strlen("src_ip="))) {
+            char source[TAC_PLUS_SRC_IP_LENGTH] = {0};
+
+            if (strlen(*argv + strlen("src_ip=")) >= TAC_PLUS_SRC_IP_LENGTH - 1) {
+                _pam_log(LOG_ERR, "Source IP appears to be wrong.");
+                continue;
+            }
+            xstrncpy(source, *argv + strlen("src_ip="), TAC_PLUS_SRC_IP_LENGTH - 1);
+
+            src_addr.sin_family = AF_INET;
+            src_addr.sin_port = htons(INADDR_ANY);
+            if (inet_aton(source, &(src_addr.sin_addr)) == 0){
+                _pam_log(LOG_ERR, "Invalid IP address.");
+                memset(&src_addr, 0, sizeof(struct sockaddr_in));
+                continue;
+            }
         } else if (!strcmp(*argv, "acct_all")) {
             ctrl |= PAM_TAC_ACCT;
         } else if (!strncmp(*argv, "server=", strlen("server="))) { /* authen & acct */
@@ -456,6 +474,7 @@ int _pam_parse(int argc, const char **argv)
         _pam_log(LOG_DEBUG, "tac_prompt='%s'", tac_prompt);
         _pam_log(LOG_DEBUG, "tac_login='%s'", tac_login);
         _pam_log(LOG_DEBUG, "tac_vrf='%s'", tac_vrf);
+        _pam_log(LOG_DEBUG, "src_ip='%s'", tac_ntop((struct sockaddr*)&src_addr));
     }
 
     return ctrl;

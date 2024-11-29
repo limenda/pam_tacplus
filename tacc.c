@@ -62,7 +62,7 @@ void showversion(char *progname);
 
 void authenticate(const struct addrinfo *tac_server, const char *tac_secret,
                   const char *user, const char *pass, const char *tty,
-                  const char *vrf, const char *remote_addr);
+                  const char *vrf, const char *src_ip, const char *remote_addr);
 
 void timeout_handler(int signum);
 
@@ -108,7 +108,8 @@ static struct option long_options[] =
         {"login", required_argument,
          NULL, 'L'},
         {"tty", required_argument, NULL, 'y'},
-        {"vrf", required_argument, NULL, 'v'},
+        {"vrf", optional_argument, NULL, 'v'},
+        {"src_ip", optional_argument, NULL, 'i'},
 
         /* modifiers */
         {"quiet", no_argument, NULL, 'q'},
@@ -119,7 +120,7 @@ static struct option long_options[] =
         {0, 0, 0, 0}};
 
 /* command line letters */
-char *opt_string = "TRAVhu:p:s:k:c:qr:wnS:P:L:y:v:";
+char *opt_string = "TRAVhu:p:s:k:c:qr:wnS:P:L:y:v:i:";
 
 void dump_attributes(gl_list_t attr)
 {
@@ -139,7 +140,8 @@ int main(int argc, char **argv)
     char *remote_addr = NULL;
     char *service = NULL;
     char *protocol = NULL;
-    char* vrf = NULL;
+    char *vrf = NULL;
+    char *src_ip = NULL;
     struct addrinfo *tac_server;
     char *tac_server_name = NULL;
     int tac_fd;
@@ -251,6 +253,9 @@ int main(int argc, char **argv)
             case 'v':
                 vrf = optarg;
                 break;
+            case 'i':
+                vrf = src_ip;
+                break;
             default:
                 printf("Invalid option: %s", optarg);
                 break;
@@ -330,11 +335,23 @@ int main(int argc, char **argv)
         exit(EXIT_ERR);
     }
 
+    struct sockaddr_in src_addr;
+    memset(&src_addr, 0, sizeof(struct sockaddr_in));
+    if (src_ip != NULL)
+    {
+        src_addr.sin_family = AF_INET;
+        src_addr.sin_port = htons(INADDR_ANY);
+        if (inet_aton(src_ip, &(src_addr.sin_addr)) == 0){
+            printf("Invalid source IP address.\n");
+            exit(EXIT_ERR);
+        }
+    }
+
     /* open syslog before any TACACS+ calls */
     openlog("tacc", LOG_CONS | LOG_PID, LOG_AUTHPRIV);
 
     if (do_authen)
-        authenticate(tac_server, tac_secret, g_user, pass, tty, vrf, remote_addr);
+        authenticate(tac_server, tac_secret, g_user, pass, tty, vrf, src_ip, remote_addr);
 
     if (do_author) {
         struct areply arep;
@@ -348,7 +365,7 @@ int main(int argc, char **argv)
         tac_add_attrib(send_attr, "service", service);
         tac_add_attrib(send_attr, "protocol", protocol);
 
-        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
+        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, src_addr.sin_family ? &src_addr : NULL, 60);
         if (tac_fd < 0) {
             if (!quiet)
                 printf("Error connecting to TACACS+ server: %m\n");
@@ -412,7 +429,7 @@ int main(int argc, char **argv)
         tac_add_attrib(send_attr, "service", service);
         tac_add_attrib(send_attr, "protocol", protocol);
 
-        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
+        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, src_addr.sin_family ? &src_addr : NULL, 60);
         if (tac_fd < 0) {
             if (!quiet)
                 printf("Error connecting to TACACS+ server: %m\n");
@@ -537,7 +554,7 @@ int main(int argc, char **argv)
         sprintf(buf, "%d", task_id);
         tac_add_attrib(send_attr, "task_id", buf);
 
-        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
+        tac_fd = tac_connect_single(tac_server, tac_secret, vrf, src_addr.sin_family ? &src_addr : NULL, 60);
         if (tac_fd < 0) {
             if (!quiet)
                 printf("Error connecting to TACACS+ server: %m\n");
@@ -590,7 +607,7 @@ void sighandler(int sig __Unused)
 
 void authenticate(const struct addrinfo *tac_server, const char *tac_secret,
                   const char *user, const char *pass, const char *tty, const char *vrf,
-                  const char *remote_addr)
+                  const char *src_ip, const char *remote_addr)
 {
     int tac_fd;
     int ret;
@@ -598,7 +615,18 @@ void authenticate(const struct addrinfo *tac_server, const char *tac_secret,
 
     memset(&arep, 0, sizeof(arep));
 
-    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, NULL, 60);
+    struct sockaddr_in src_addr;
+    memset(&src_addr, 0, sizeof(struct sockaddr_in));
+    if (src_ip != NULL) {
+        src_addr.sin_family = AF_INET;
+        src_addr.sin_port = htons(INADDR_ANY);
+        if (inet_aton(src_ip, &(src_addr.sin_addr)) == 0){
+            printf("Invalid source IP address.\n");
+            exit(EXIT_ERR);
+        }
+    }
+
+    tac_fd = tac_connect_single(tac_server, tac_secret, vrf, src_addr.sin_family ? &src_addr : NULL, 60);
     if (tac_fd < 0) {
         if (!quiet)
             printf("Error connecting to TACACS+ server: %m\n");

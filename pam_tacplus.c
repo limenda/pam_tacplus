@@ -222,7 +222,7 @@ int _pam_account(pam_handle_t *pamh, int argc, const char **argv, int type,
 	{
 		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key, 
 									(*tac_vrf) ? tac_vrf : NULL,
-									NULL, tac_timeout);
+									src_addr.sin_family ? &src_addr : NULL, tac_timeout);
 		if (tac_fd < 0)
 		{
 			_pam_log(LOG_WARNING, "%s: error sending %s (fd)", __FUNCTION__,
@@ -331,7 +331,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
 		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
 									(*tac_vrf) ? tac_vrf : NULL,
-									NULL, tac_timeout);
+									src_addr.sin_family ? &src_addr : NULL, tac_timeout);
         if (tac_fd < 0) {
             _pam_log(LOG_ERR, "connection failed srv %lu: %m", srv_i);
             active_server.addr = NULL;
@@ -672,7 +672,7 @@ int pam_sm_acct_mgmt(pam_handle_t *pamh, int UNUSED(flags), int argc,
 
 	tac_fd = tac_connect_single(active_server.addr, active_server.key,
 								(*tac_vrf) ? tac_vrf : NULL,
-								NULL, tac_timeout);
+								src_addr.sin_family ? &src_addr : NULL, tac_timeout);
 	if (tac_fd < 0)
 	{
         _pam_log(LOG_ERR, "TACACS+ server unavailable");
@@ -858,7 +858,7 @@ int pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc,
 
 		tac_fd = tac_connect_single(tac_srv[srv_i].addr, tac_srv[srv_i].key,
 									(*tac_vrf) ? tac_vrf : NULL,
-									NULL, tac_timeout);
+									src_addr.sin_family ? &src_addr : NULL, tac_timeout);
 		if (tac_fd < 0)
 		{
 			_pam_log(LOG_ERR, "connection failed srv %lu: %m", srv_i);
